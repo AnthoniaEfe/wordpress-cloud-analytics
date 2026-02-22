@@ -12,7 +12,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { api } from "../api/client";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#c084fc", "#d8b4fe"];
@@ -35,7 +35,7 @@ export default function Dashboard() {
       })
       .catch(() => setSites([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedSiteId]);
 
   useEffect(() => {
     if (!selectedSiteId) {
@@ -59,6 +59,7 @@ export default function Dashboard() {
   }, [selectedSiteId]);
 
   const selectedSite = sites.find((s) => s._id === selectedSiteId);
+  console.log(selectedSite);
   const commentChartData = engagement?.mostCommentedPosts?.slice(0, 8).map((p, i) => ({
     name: `Post ${p.id}`,
     comments: p.comment_count,

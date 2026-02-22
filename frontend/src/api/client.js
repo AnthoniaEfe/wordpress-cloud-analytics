@@ -10,8 +10,21 @@ export async function api(path, options = {}) {
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(url, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+  const text = await res.text();
+  const data = text
+    ? (() => {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return {};
+        }
+      })()
+    : {};
+  if (!res.ok) {
+    throw new Error(
+      data.error || data.message || res.statusText || "Request failed"
+    );
+  }
   return data;
 }
 

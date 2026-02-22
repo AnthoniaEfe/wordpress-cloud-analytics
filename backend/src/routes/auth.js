@@ -12,6 +12,22 @@ function asyncHandler(fn) {
   };
 }
 
+router.use((req, res, next) => {
+  if (
+    req.method === "POST" &&
+    (req.path === "/register" || req.path === "/login")
+  ) {
+    console.log(
+      "[auth]",
+      req.method,
+      req.path,
+      "body keys:",
+      req.body ? Object.keys(req.body) : "none"
+    );
+  }
+  next();
+});
+
 router.use(authLimiter);
 
 router.post(

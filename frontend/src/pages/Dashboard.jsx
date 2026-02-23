@@ -12,13 +12,11 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { useAuth } from "../context/useAuth";
 import { api } from "../api/client";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#c084fc", "#d8b4fe"];
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
   const [sites, setSites] = useState([]);
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [engagement, setEngagement] = useState(null);
@@ -31,11 +29,11 @@ export default function Dashboard() {
     api("/sites")
       .then(({ sites: s }) => {
         setSites(s || []);
-        if (s?.length && !selectedSiteId) setSelectedSiteId(s[0]._id);
+        if (s?.length) setSelectedSiteId((prev) => prev || s[0]._id);
       })
       .catch(() => setSites([]))
       .finally(() => setLoading(false));
-  }, [selectedSiteId]);
+  }, []);
 
   useEffect(() => {
     if (!selectedSiteId) {
@@ -58,8 +56,6 @@ export default function Dashboard() {
       .finally(() => setMetricsLoading(false));
   }, [selectedSiteId]);
 
-  const selectedSite = sites.find((s) => s._id === selectedSiteId);
-  console.log(selectedSite);
   const commentChartData = engagement?.mostCommentedPosts?.slice(0, 8).map((p, i) => ({
     name: `Post ${p.id}`,
     comments: p.comment_count,
@@ -77,13 +73,9 @@ export default function Dashboard() {
       <header className="dashboard-header">
         <div>
           <h1>WordPress Cloud Analytics</h1>
-          <p className="header-user">{user?.email}</p>
         </div>
         <div className="header-actions">
           <Link to="/sites/new" className="btn-primary">Add site</Link>
-          <button type="button" className="btn-secondary" onClick={logout}>
-            Sign out
-          </button>
         </div>
       </header>
 

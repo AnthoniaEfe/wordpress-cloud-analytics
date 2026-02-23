@@ -1,24 +1,25 @@
 const express = require("express");
 const WordPressSite = require("../models/WordPressSite");
 const AnalyticsSnapshot = require("../models/AnalyticsSnapshot");
-const { auth } = require("../middleware/auth");
+const { ownerId, requireOwnerId } = require("../middleware/ownerId");
 const wp = require("../services/wordpress");
 const pagespeed = require("../services/pagespeed");
 const router = express.Router();
 
 const CACHE_MINS = 30;
 
-router.use(auth);
+router.use(ownerId);
+router.use(requireOwnerId);
 
-async function getSite(userId, siteId) {
-  const site = await WordPressSite.findOne({ _id: siteId, userId });
+async function getSite(ownerId, siteId) {
+  const site = await WordPressSite.findOne({ _id: siteId, ownerId });
   if (!site) return null;
   return site;
 }
 
 router.get("/engagement/:siteId", async (req, res) => {
   try {
-    const site = await getSite(req.user._id, req.params.siteId);
+    const site = await getSite(req.ownerId, req.params.siteId);
     if (!site) return res.status(404).json({ error: "Site not found" });
 
     const cached = await AnalyticsSnapshot.findOne({
@@ -59,7 +60,7 @@ router.get("/engagement/:siteId", async (req, res) => {
 
 router.get("/performance/:siteId", async (req, res) => {
   try {
-    const site = await getSite(req.user._id, req.params.siteId);
+    const site = await getSite(req.ownerId, req.params.siteId);
     if (!site) return res.status(404).json({ error: "Site not found" });
 
     const cached = await AnalyticsSnapshot.findOne({
@@ -99,7 +100,7 @@ router.get("/performance/:siteId", async (req, res) => {
 
 router.get("/seo/:siteId", async (req, res) => {
   try {
-    const site = await getSite(req.user._id, req.params.siteId);
+    const site = await getSite(req.ownerId, req.params.siteId);
     if (!site) return res.status(404).json({ error: "Site not found" });
 
     const cached = await AnalyticsSnapshot.findOne({

@@ -1,14 +1,24 @@
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
+const STORAGE_KEY = "wp-analytics-anonymous-id";
 
-function getToken() {
-  return localStorage.getItem("token");
+function getAnonymousId() {
+  let id = localStorage.getItem(STORAGE_KEY);
+  if (!id) {
+    id = crypto.randomUUID
+      ? crypto.randomUUID()
+      : `anon-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    localStorage.setItem(STORAGE_KEY, id);
+  }
+  return id;
 }
 
 export async function api(path, options = {}) {
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-  const headers = { "Content-Type": "application/json", ...options.headers };
-  const token = getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Anonymous-Id": getAnonymousId(),
+    ...options.headers,
+  };
   const res = await fetch(url, { ...options, headers });
   const text = await res.text();
   const data = text
@@ -28,4 +38,4 @@ export async function api(path, options = {}) {
   return data;
 }
 
-export default { api, getToken };
+export default { api, getAnonymousId };

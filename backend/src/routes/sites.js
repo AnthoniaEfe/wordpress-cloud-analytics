@@ -1,15 +1,16 @@
 const express = require("express");
 const WordPressSite = require("../models/WordPressSite");
-const { auth } = require("../middleware/auth");
+const { ownerId, requireOwnerId } = require("../middleware/ownerId");
 const { encrypt } = require("../utils/encrypt");
 const wp = require("../services/wordpress");
 const router = express.Router();
 
-router.use(auth);
+router.use(ownerId);
+router.use(requireOwnerId);
 
 router.get("/", async (req, res) => {
   try {
-    const sites = await WordPressSite.find({ userId: req.user._id })
+    const sites = await WordPressSite.find({ ownerId: req.ownerId })
       .select("-credentialsEncrypted")
       .sort({ createdAt: -1 });
     res.json({ sites });
@@ -29,15 +30,13 @@ router.post("/", async (req, res) => {
     const credentialsEncrypted = encrypt(`${username}:${appPassword}`);
     const valid = await wp.validateConnection(siteUrl, credentialsEncrypted);
     if (!valid) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Could not connect to WordPress site. Check URL and Application Password.",
-        });
+      return res.status(400).json({
+        error:
+          "Could not connect to WordPress site. Check URL and Application Password.",
+      });
     }
     const site = await WordPressSite.create({
-      userId: req.user._id,
+      ownerId: req.ownerId,
       name: name.trim(),
       siteUrl: siteUrl.replace(/\/$/, ""),
       credentialsEncrypted,
@@ -54,7 +53,7 @@ router.get("/:id", async (req, res) => {
   try {
     const site = await WordPressSite.findOne({
       _id: req.params.id,
-      userId: req.user._id,
+      ownerId: req.ownerId,
     }).select("-credentialsEncrypted");
     if (!site) return res.status(404).json({ error: "Site not found" });
     res.json({ site });
@@ -67,7 +66,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const site = await WordPressSite.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id,
+      ownerId: req.ownerId,
     });
     if (!site) return res.status(404).json({ error: "Site not found" });
     res.json({ message: "Site removed" });
